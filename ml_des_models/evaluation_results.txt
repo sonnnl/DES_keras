@@ -1,0 +1,7 @@
+Optimization strategy: speed
+Training parameters: samples=20000, epochs=10, lr=0.001, batch_size=128, dropout=0.2
+
+Evaluation results:
+sbox_0: Accuracy=0.4560, Loss=0.5578
+sbox_1: Accuracy=0.3830, Loss=0.5570
+permutation: Accuracy=0.0370, Loss=0.0602

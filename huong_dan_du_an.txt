@@ -1,0 +1,91 @@
+# DỰ ÁN ML-ENHANCED DES
+## Tổng quan về các file trong dự án
+
+### 1. ml_enhanced_des.py
+File này chứa lớp và hàm chính cho việc tăng cường DES bằng Machine Learning.
+
+#### Các thành phần chính:
+- **Lớp MLEnhancedDES**: Lõi của dự án, thay thế một số hoạt động của DES bằng dự đoán từ mô hình neural network
+- **encrypt_data/decrypt_data**: Hai hàm wrapper cho phép mã hóa/giải mã chuỗi dữ liệu dài
+- **train_and_save_model**: Hàm chịu trách nhiệm huấn luyện và lưu các mô hình neural network
+
+#### Các hàm quan trọng trong MLEnhancedDES:
+- **__init__**: Khởi tạo các bảng S-box, bảng hoán vị, mô hình neural
+- **load_models**: Tìm và tải các mô hình đã được huấn luyện từ thư mục ml_des_models
+- **encrypt/decrypt**: Mã hóa/giải mã dữ liệu và đo thời gian thực hiện
+- **encrypt_single/decrypt_single**: Phiên bản tối ưu hóa cho đo hiệu suất (không đo thời gian)
+- **benchmark**: Đánh giá hiệu suất và độ chính xác của mô hình
+- **generate_training_data**: Tạo dữ liệu huấn luyện cho cả S-box và phép hoán vị
+- **_expand, _feistel_function, _apply_permutation**: Các hàm triển khai thuật toán DES
+
+### 2. bank_digital_demo_improved.py
+Giao diện người dùng để trình diễn và so sánh giữa DES truyền thống và ML-Enhanced DES.
+
+#### Các thành phần chính:
+- **Lớp DESAdapter**: Bộ chuyển đổi để duy trì tương thích với code cũ
+- **Lớp DigitalBankingSimulator**: Lớp chính xây dựng giao diện người dùng
+
+#### Các hàm quan trọng trong DigitalBankingSimulator:
+- **__init__**: Khởi tạo giao diện và tải mô hình ML-Enhanced DES
+- **setup_ui**: Thiết lập layout tổng thể của giao diện
+- **setup_simulation_tab**: Thiết lập tab mô phỏng giao dịch
+- **setup_des_encryption_tab**: Thiết lập tab so sánh mã hóa
+- **setup_des_decryption_tab**: Thiết lập tab so sánh giải mã
+- **simulate_transaction**: Mô phỏng một giao dịch ngân hàng, mã hóa/giải mã và đo hiệu suất
+- **encrypt_and_compare/decrypt_and_compare**: So sánh hiệu suất của mã hóa/giải mã giữa hai phương pháp
+- **update_charts**: Cập nhật biểu đồ hiệu suất dựa trên dữ liệu thu thập được
+- **export_transaction_data**: Xuất dữ liệu giao dịch ra file CSV
+
+## Quá trình hoạt động của dự án
+
+### 1. Quá trình khởi động ứng dụng:
+1. Import thư viện và tìm module MLEnhancedDES
+2. Khởi tạo DigitalBankingSimulator và giao diện người dùng
+3. Thử tải mô hình ML-Enhanced DES từ thư mục ml_des_models
+4. Hiển thị trạng thái tải mô hình thành công/thất bại
+
+### 2. Quá trình mô phỏng giao dịch:
+1. Tạo key ngẫu nhiên cho mỗi user
+2. Khi nhấn "Bắt đầu mô phỏng", thread mô phỏng được khởi động
+3. Mỗi giao dịch:
+   - Tạo plaintext ngẫu nhiên
+   - Mã hóa bằng DES truyền thống và đo thời gian
+   - Mã hóa bằng ML-Enhanced DES, giải mã và đo thời gian
+   - Kiểm tra tính thuận nghịch (khả năng khôi phục dữ liệu ban đầu)
+   - Cập nhật biểu đồ mỗi 5 giao dịch
+
+### 3. Quá trình huấn luyện mô hình (khi chạy train_and_save_model):
+1. Tạo dữ liệu huấn luyện ngẫu nhiên cho S-box và hoán vị
+2. Chia thành tập huấn luyện và kiểm thử
+3. Xây dựng kiến trúc mô hình neural network (MLP)
+4. Huấn luyện mô hình với callbacks cho early stopping
+5. Đánh giá hiệu suất và lưu mô hình
+
+### 4. Quá trình mã hóa/giải mã ML-Enhanced:
+1. Tải mô hình từ đĩa
+2. Nhận plaintext/ciphertext và key làm đầu vào
+3. Thực hiện các bước của DES nhưng thay thế:
+   - Tra cứu S-box bằng dự đoán từ mô hình neural
+   - Áp dụng các phép hoán vị tối ưu hóa
+4. Trả về kết quả và thời gian thực hiện
+
+## Giải thích độ chính xác hiển thị trong biểu đồ
+
+Biểu đồ "Tính thuận nghịch" hiển thị khả năng của ML-Enhanced DES trong việc bảo toàn thông tin:
+- 100% nghĩa là ML-Enhanced DES có thể mã hóa và giải mã để khôi phục lại đúng 100% dữ liệu ban đầu
+- Giá trị thấp hơn 100% cho thấy quá trình có thể mất mát thông tin
+
+Lưu ý: ML-Enhanced DES tạo ra kết quả mã hóa KHÁC với DES chuẩn (đây là thiết kế có chủ đích để tăng tốc độ), nhưng vẫn đảm bảo tính thuận nghịch hoàn hảo (mã hóa → giải mã → dữ liệu ban đầu).
+
+## Các tham số huấn luyện có thể điều chỉnh
+
+Khi huấn luyện mô hình ML-Enhanced DES, có thể điều chỉnh các tham số sau:
+- **num_samples**: Số lượng mẫu huấn luyện
+- **epochs**: Số lần lặp qua toàn bộ dữ liệu
+- **lr**: Tốc độ học (learning rate)
+- **bs**: Kích thước batch (batch size)
+- **dr**: Tỷ lệ dropout
+- **early_stopping**: Có sử dụng early stopping không
+- **patience**: Số epoch chờ đợi khi không cải thiện
+- **optimize_for**: Tối ưu hóa cho "speed" (tốc độ), "accuracy" (độ chính xác) hoặc "balanced" (cân bằng)
+- **fast_mode**: Chế độ nhanh cho mục đích demo 

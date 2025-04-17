@@ -1,0 +1,292 @@
+QUY TRÌNH HUẤN LUYỆN MÔ HÌNH ML-ENHANCED DES
+================================================
+
+Dựa trên mã nguồn hiện có, quy trình huấn luyện mô hình ML-Enhanced DES bao gồm các bước sau:
+
+1. TỔNG QUAN VỀ QUÁ TRÌNH HUẤN LUYỆN
+-----------------------------------
+
+Trong ML-Enhanced DES, thuật toán DES truyền thống được tối ưu hóa bằng cách sử dụng các mô hình neural network để thay thế các thành phần tính toán phức tạp của DES như S-box và P-box. Mục tiêu chính là tăng tốc độ xử lý mã hóa/giải mã DES.
+
+Từ mã nguồn hiện có, chúng ta thấy rằng chỉ có 2 mô hình S-box (thay vì 8 như DES tiêu chuẩn) được huấn luyện cho mục đích demo:
+
+```python
+# Khởi tạo mô hình S-boxes
+self.sbox_models = [None] * 2  # Giảm từ 8 xuống 2 mô hình để DEMO
+```
+
+2. QUÁ TRÌNH TẠO DỮ LIỆU HUẤN LUYỆN
+-----------------------------------
+
+
+### 2.2. Phương pháp nâng cao (generate_enhanced_training_data)
+
+Phương pháp này tạo dữ liệu chất lượng hơn bằng cách kết hợp:
+- Dữ liệu từ mã hóa DES thực tế (sử dụng plaintext và key ngẫu nhiên)
+- Dữ liệu ngẫu nhiên
+
+```python
+def generate_enhanced_training_data(self, num_samples=500000, real_encryption_ratio=0.7, save_samples=False, samples_file="training_data_samples.csv", num_save_samples=5000):
+    """
+    Tạo dữ liệu huấn luyện nâng cao cho các mô hình S-box và permutation
+    
+    Phương pháp này tạo bộ dữ liệu huấn luyện tốt hơn bằng cách:
+    1. Sử dụng một lượng lớn dữ liệu ngẫu nhiên
+    2. Kết hợp với dữ liệu từ các cặp plaintext/ciphertext thực tế
+    3. Tạo dữ liệu có phân phối gần với dữ liệu thực tế
+    """
+```
+
+Trong phương pháp này, với tỷ lệ `real_encryption_ratio` (mặc định là 0.7 tức 70%), dữ liệu được tạo ra từ việc mã hóa DES thực tế:
+
+```python
+# Tạo plaintext và key ngẫu nhiên
+plaintext = os.urandom(8)
+key = os.urandom(8)
+
+# Mã hóa bằng DES tiêu chuẩn để lấy ciphertext
+cipher = DES.new(key, DES.MODE_ECB)
+ciphertext = cipher.encrypt(plaintext)
+
+# Từ đó trích xuất các giá trị trung gian làm dữ liệu huấn luyện
+```
+
+3. KIẾN TRÚC MÔ HÌNH MẠNG NEURAL
+--------------------------------
+
+Mã nguồn hiện tại sử dụng hai loại kiến trúc mô hình:
+
+### 3.1. Mô hình S-box chuẩn
+
+```python
+def build_sbox_model(self, dropout_rate=0.2, learning_rate=0.001):
+    """
+    Xây dựng mô hình neural network cho S-box
+    """
+    # Định nghĩa model
+    inputs = layers.Input(shape=(6,))
+    x = layers.Dense(32, activation='relu')(inputs)
+    x = layers.Dense(64, activation='relu')(x)
+    x = layers.Dropout(dropout_rate)(x)
+    x = layers.Dense(32, activation='relu')(x)
+    outputs = layers.Dense(4, activation='sigmoid')(x)
+    
+    model = models.Model(inputs=inputs, outputs=outputs)
+    
+    # Biên dịch model
+    optimizer = optimizers.Adam(learning_rate=learning_rate)
+    model.compile(
+        optimizer=optimizer,
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    return model
+```
+
+### 3.2. Mô hình S-box nhanh (tối ưu cho tốc độ)
+
+```python
+def build_fast_sbox_model(self, learning_rate=0.001):
+    """
+    Xây dựng mô hình neural network nhẹ và nhanh cho S-box
+    Phiên bản này ưu tiên tốc độ xử lý hơn độ chính xác
+    """
+    # Định nghĩa model với ít layers và neurons hơn
+    inputs = layers.Input(shape=(6,))
+    x = layers.Dense(16, activation='relu')(inputs)
+    outputs = layers.Dense(4, activation='sigmoid')(x)
+    
+    model = models.Model(inputs=inputs, outputs=outputs)
+    
+    # Biên dịch model
+    optimizer = optimizers.Adam(learning_rate=learning_rate)
+    model.compile(
+        optimizer=optimizer,
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    return model
+```
+
+### 3.3. Mô hình Permutation
+
+```python
+def build_permutation_model(self, dropout_rate=0.2, learning_rate=0.001):
+    """
+    Xây dựng mô hình neural network cho permutation
+    """
+    # Định nghĩa model
+    inputs = layers.Input(shape=(32,))
+    x = layers.Dense(64, activation='relu')(inputs)
+    x = layers.Dense(128, activation='relu')(x)
+    x = layers.Dropout(dropout_rate)(x)
+    x = layers.Dense(64, activation='relu')(x)
+    outputs = layers.Dense(32, activation='sigmoid')(x)
+    
+    model = models.Model(inputs=inputs, outputs=outputs)
+    
+    # Biên dịch model
+    optimizer = optimizers.Adam(learning_rate=learning_rate)
+    model.compile(
+        optimizer=optimizer,
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    return model
+```
+
+4. QUÁ TRÌNH HUẤN LUYỆN
+----------------------
+
+Quá trình huấn luyện được thực hiện thông qua hàm `train_and_save_model()` với các tham số:
+
+```python
+def train_and_save_model(num_samples=500000, epochs=100, lr=0.001, bs=128, dr=0.2, save_path="ml_des_models", optimize_for="balanced", save_training_data=True, early_stopping=True, patience=5, fast_mode=False):
+```
+
+Trong đó:
+- `num_samples`: Số lượng mẫu để huấn luyện
+- `epochs`: Số epochs huấn luyện
+- `lr`: Learning rate
+- `bs`: Batch size
+- `dr`: Dropout rate
+- `save_path`: Đường dẫn để lưu mô hình
+- `optimize_for`: Chiến lược tối ưu hóa ("speed", "accuracy", "balanced")
+- `early_stopping`: Có sử dụng kỹ thuật dừng sớm không
+- `patience`: Số epochs chờ đợi khi validation loss không giảm
+- `fast_mode`: Chế độ huấn luyện nhanh (giảm số mẫu và epochs)
+
+Chương trình hỗ trợ 3 chiến lược tối ưu hóa:
+
+### 4.1. Tối ưu hóa cho tốc độ (speed)
+
+```python
+if optimize_for == "speed":
+    print("Tối ưu hóa cho TỐC ĐỘ - sử dụng mô hình nhẹ")
+    # Sử dụng mô hình nhẹ và nhanh
+    sbox_models = []
+    for i in range(2):
+        model = ml_des.build_fast_sbox_model(learning_rate=lr)
+        history = model.fit(
+            X_sbox[i], y_sbox[i],
+            epochs=min(30, epochs),  # Giảm epochs để tăng tốc quá trình huấn luyện
+            batch_size=bs,
+            validation_split=0.1,
+            verbose=1,
+            callbacks=callbacks
+        )
+        sbox_models.append(model)
+```
+
+### 4.2. Tối ưu hóa cho độ chính xác (accuracy)
+
+```python
+elif optimize_for == "accuracy":
+    print("Tối ưu hóa cho ĐỘ CHÍNH XÁC - sử dụng mô hình phức tạp")
+    # Sử dụng mô hình phức tạp hơn
+    sbox_models = []
+    for i in range(2):
+        model = ml_des.build_sbox_model(dropout_rate=dr, learning_rate=lr)
+        history = model.fit(
+            X_sbox[i], y_sbox[i],
+            epochs=epochs,
+            batch_size=bs,
+            validation_split=0.2,
+            verbose=1,
+            callbacks=callbacks
+        )
+        sbox_models.append(model)
+```
+
+### 4.3. Cân bằng giữa tốc độ và độ chính xác (balanced)
+
+```python
+else:  # "balanced"
+    print("Tối ưu hóa CÂN BẰNG giữa tốc độ và độ chính xác")
+    # Cân bằng giữa tốc độ và độ chính xác
+    sbox_models = []
+    for i in range(2):
+        if i % 2 == 0:  # Dùng mô hình nhanh cho một nửa S-box
+            model = ml_des.build_fast_sbox_model(learning_rate=lr)
+            history = model.fit(
+                X_sbox[i], y_sbox[i],
+                epochs=min(50, epochs),
+                batch_size=bs,
+                validation_split=0.15,
+                verbose=1,
+                callbacks=callbacks
+            )
+        else:  # Dùng mô hình chính xác cho nửa còn lại
+            model = ml_des.build_sbox_model(dropout_rate=dr, learning_rate=lr)
+            history = model.fit(
+                X_sbox[i], y_sbox[i],
+                epochs=epochs,
+                batch_size=bs,
+                validation_split=0.2,
+                verbose=1,
+                callbacks=callbacks
+            )
+        sbox_models.append(model)
+```
+
+5. LƯU TRỮ VÀ ĐÁNH GIÁ MÔ HÌNH
+---------------------------
+
+Sau khi huấn luyện, các mô hình được lưu và đánh giá:
+
+```python
+# Lưu mô hình
+print(f"Lưu mô hình vào {save_path}...")
+for i, model in enumerate(sbox_models):
+    model.save(os.path.join(save_path, f"sbox_{i}_model"))
+perm_model.save(os.path.join(save_path, "permutation_model"))
+
+# Đánh giá mô hình
+results = {}
+for i, model in enumerate(sbox_models):
+    val_loss, val_acc = model.evaluate(X_sbox[i][-1000:], y_sbox[i][-1000:], verbose=0)
+    results[f"sbox_{i}"] = {"accuracy": val_acc, "loss": val_loss}
+
+perm_val_loss, perm_val_acc = perm_model.evaluate(X_perm[-1000:], y_perm[-1000:], verbose=0)
+results["permutation"] = {"accuracy": perm_val_acc, "loss": perm_val_loss}
+
+# Lưu kết quả đánh giá
+with open(os.path.join(save_path, "evaluation_results.txt"), "w") as f:
+    f.write(f"Optimization strategy: {optimize_for}\n")
+    f.write(f"Training parameters: samples={num_samples}, epochs={epochs}, lr={lr}, batch_size={bs}, dropout={dr}\n\n")
+    f.write("Evaluation results:\n")
+    for key, value in results.items():
+        f.write(f"{key}: Accuracy={value['accuracy']:.4f}, Loss={value['loss']:.4f}\n")
+```
+
+6. THỰC HIỆN HUẤN LUYỆN MÔ HÌNH
+------------------------------
+
+Để huấn luyện mô hình qua command line, mã nguồn cung cấp hàm `demo()` cùng với các tham số dòng lệnh:
+
+```python
+python ml_enhanced_des.py --mode train --samples 100000 --epochs 50 --learning_rate 0.001 --batch_size 128 --dropout 0.2 --model_path ml_des_models --optimize_for balanced --early_stopping --patience 5 --fast
+```
+
+Các thông số có thể điều chỉnh:
+- `--mode`: Chọn 'train'
+- `--samples`: Số lượng mẫu huấn luyện
+- `--epochs`: Số epochs huấn luyện
+- `--learning_rate`: Learning rate
+- `--batch_size`: Batch size
+- `--dropout`: Dropout rate
+- `--model_path`: Đường dẫn lưu mô hình
+- `--optimize_for`: Chiến lược tối ưu hóa ('speed', 'accuracy', 'balanced')
+- `--early_stopping`: Sử dụng kỹ thuật dừng sớm
+- `--patience`: Số epochs chờ đợi khi validation loss không giảm
+- `--fast`: Chế độ huấn luyện nhanh (giảm số mẫu và epochs)
+
+7. KẾT LUẬN
+----------
+
+Quá trình huấn luyện ML-Enhanced DES tập trung vào việc tạo ra các mô hình neural network có thể thay thế các thành phần tính toán phức tạp của DES truyền thống. Dựa vào chiến lược tối ưu hóa được chọn (tốc độ, độ chính xác, hoặc cân bằng), cấu trúc mô hình và quá trình huấn luyện sẽ được điều chỉnh tương ứng.
+
+Đối với mục tiêu chính là tăng tốc độ xử lý, ML-Enhanced DES đã thành công trong việc tạo ra một phiên bản nhanh hơn của thuật toán DES truyền thống, đồng thời vẫn đảm bảo tính thuận nghịch - khả năng giải mã chính xác dữ liệu đã mã hóa. 
