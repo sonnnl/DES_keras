@@ -1,8 +1,4 @@
 #!/Users/kasiz/miniconda3/envs/tf_gpu/python.exe
-"""
-ML-Enhanced DES - Tối ưu hóa hiệu suất mã hóa/giải mã DES bằng Machine Learning
-Hỗ trợ giao diện bank_digital
-"""
 
 import numpy as np
 import tensorflow as tf
@@ -131,105 +127,87 @@ class MLEnhancedDES:
             28, 29, 30, 31, 32, 1
         ]
         
-    def generate_training_data(self, num_samples=100000):
-        """
-        Tạo dữ liệu huấn luyện cho các mô hình S-box và permutation
+    # def generate_training_data(self, num_samples=100000):
+    #     """
+    #     Tạo dữ liệu huấn luyện cho các mô hình S-box và permutation
         
-        Args:
-            num_samples: Số lượng mẫu cần tạo
+    #     Args:
+    #         num_samples: Số lượng mẫu cần tạo
             
-        Returns:
-            Tuple: (X_sbox_all, y_sbox_all, X_perm, y_perm)
-        """
-        print(f"Generating {num_samples} training samples...")
+    #     Returns:
+    #         Tuple: (X_sbox_all, y_sbox_all, X_perm, y_perm)
+    #     """
+    #     print(f"Generating {num_samples} training samples...")
         
-        # Dữ liệu cho S-box
-        X_sbox_all = [[] for _ in range(2)]  # list of inputs for each S-box
-        y_sbox_all = [[] for _ in range(2)]  # list of outputs for each S-box
+    #     # Dữ liệu cho S-box
+    #     X_sbox_all = [[] for _ in range(2)]  # list of inputs for each S-box
+    #     y_sbox_all = [[] for _ in range(2)]  # list of outputs for each S-box
         
-        # Dữ liệu cho permutation
-        X_perm = [] # list of inputs for permutation
-        y_perm = [] # list of outputs for permutation
+    #     # Dữ liệu cho permutation
+    #     X_perm = [] # list of inputs for permutation
+    #     y_perm = [] # list of outputs for permutation
         
-        for _ in range(num_samples):
-            # Tạo dữ liệu cho S-box
-            for i in range(2):  # Giảm từ 8 xuống 2 S-box cho DEMO
-                # Tạo đầu vào ngẫu nhiên (6-bit)
-                input_val = random.randint(0, 63)  # 6-bit số nguyên (0-63)
+    #     for _ in range(num_samples):
+    #         # Tạo dữ liệu cho S-box
+    #         for i in range(2):  # Giảm từ 8 xuống 2 S-box cho DEMO
+    #             # Tạo đầu vào ngẫu nhiên (6-bit)
+    #             input_val = random.randint(0, 63)  # 6-bit số nguyên (0-63)
                 
-                # Chuyển thành mảng nhị phân 6 bit
-                input_binary = np.zeros(6, dtype=np.float32)
-                for j in range(6):
-                    input_binary[5-j] = (input_val >> j) & 1    #ví dụ: input_val = 100011, input_binary = [0, 0, 1, 0, 0, 0]
+    #             # Chuyển thành mảng nhị phân 6 bit
+    #             input_binary = np.zeros(6, dtype=np.float32)
+    #             for j in range(6):
+    #                 input_binary[5-j] = (input_val >> j) & 1    #ví dụ: input_val = 100011, input_binary = [0, 0, 1, 0, 0, 0]
                 
-                # Lưu vào X
-                X_sbox_all[i].append(input_binary)
+    #             # Lưu vào X
+    #             X_sbox_all[i].append(input_binary)
                 
-                # Tính đầu ra S-box thực tế (4-bit)
-                # Đây là cách DES tiêu chuẩn tính toán S-box
-                row = ((input_val & 0b100000) >> 4) | (input_val & 0b000001)  #ví dụ: input_val = 100011, row = 1
-                col = (input_val & 0b011110) >> 1  #ví dụ: input_val = 100011, col = 1
-                sbox_tables = [
-                    # S1
-                    [
-                        [14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7],
-                        [0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8],
-                        [4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0],
-                        [15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13]
-                    ],
-                    # S2
-                    [
-                        [15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10],
-                        [3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5],
-                        [0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15],
-                        [13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9]
-                    ]
-                ]
-                sbox_output = sbox_tables[i][row][col] 
+    #             # Tính đầu ra S-box thực tế (4-bit)
+    #             # Đây là cách DES tiêu chuẩn tính toán S-box
+    #             row = ((input_val & 0b100000) >> 4) | (input_val & 0b000001)  #ví dụ: input_val = 100011, row = 1
+    #             col = (input_val & 0b011110) >> 1  #ví dụ: input_val = 100011, col = 1
+    #             sbox_tables = [
+    #                 # S1
+    #                 [
+    #                     [14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7],
+    #                     [0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8],
+    #                     [4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0],
+    #                     [15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13]
+    #                 ],
+    #                 # S2
+    #                 [
+    #                     [15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10],
+    #                     [3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5],
+    #                     [0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15],
+    #                     [13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9]
+    #                 ]
+    #             ]
+    #             sbox_output = sbox_tables[i][row][col] 
                 
-                # Chuyển đầu ra thành mảng nhị phân 4 bit
-                output_binary = np.zeros(4, dtype=np.float32)
-                for j in range(4):
-                    output_binary[3-j] = (sbox_output >> j) & 1  #ví dụ: sbox_output = 100011, output_binary = [0, 0, 1, 0]
+    #             # Chuyển đầu ra thành mảng nhị phân 4 bit
+    #             output_binary = np.zeros(4, dtype=np.float32)
+    #             for j in range(4):
+    #                 output_binary[3-j] = (sbox_output >> j) & 1  #ví dụ: sbox_output = 100011, output_binary = [0, 0, 1, 0]
                 
-                # Lưu vào y
-                y_sbox_all[i].append(output_binary)
+    #             # Lưu vào y
+    #             y_sbox_all[i].append(output_binary)
             
-            # Tạo dữ liệu cho permutation
-            perm_input = np.random.randint(0, 2, 32).astype(np.float32)  #ví dụ: perm_input = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
-            # Áp dụng P-box permutation chuẩn
-            # Using simplified dummy calculation
-            perm_output = np.roll(perm_input, random.randint(1, 8))  #dịch permutation input 1-8 bit ngẫu nhiên để tạo permutation output
-            X_perm.append(perm_input) #lưu permutation input
-            y_perm.append(perm_output) #lưu permutation output
+    #         # Tạo dữ liệu cho permutation
+    #         perm_input = np.random.randint(0, 2, 32).astype(np.float32)  #ví dụ: perm_input = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+    #         # Áp dụng P-box permutation chuẩn
+    #         # Using simplified dummy calculation
+    #         perm_output = np.roll(perm_input, random.randint(1, 8))  #dịch permutation input 1-8 bit ngẫu nhiên để tạo permutation output
+    #         X_perm.append(perm_input) #lưu permutation input
+    #         y_perm.append(perm_output) #lưu permutation output
         
-        # Chuyển lists thành np arrays
-        X_sbox_all = [np.array(X_sbox, dtype=np.float32) for X_sbox in X_sbox_all]  #ví dụ: X_sbox_all = [[0, 0, 1, 0, 0, 0], [0, 0, 1, 0, 0, 0]]
-        y_sbox_all = [np.array(y_sbox, dtype=np.float32) for y_sbox in y_sbox_all]  #ví dụ: y_sbox_all = [[0, 0, 1, 0], [0, 0, 1, 0]]
-        X_perm = np.array(X_perm, dtype=np.float32)  #ví dụ: X_perm = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
-        y_perm = np.array(y_perm, dtype=np.float32)  #ví dụ: y_perm = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
+    #     # Chuyển lists thành np arrays
+    #     X_sbox_all = [np.array(X_sbox, dtype=np.float32) for X_sbox in X_sbox_all]  #ví dụ: X_sbox_all = [[0, 0, 1, 0, 0, 0], [0, 0, 1, 0, 0, 0]]
+    #     y_sbox_all = [np.array(y_sbox, dtype=np.float32) for y_sbox in y_sbox_all]  #ví dụ: y_sbox_all = [[0, 0, 1, 0], [0, 0, 1, 0]]
+    #     X_perm = np.array(X_perm, dtype=np.float32)  #ví dụ: X_perm = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+    #     y_perm = np.array(y_perm, dtype=np.float32)  #ví dụ: y_perm = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
         
-        return X_sbox_all, y_sbox_all, X_perm, y_perm
+    #     return X_sbox_all, y_sbox_all, X_perm, y_perm
     
     def generate_enhanced_training_data(self, num_samples=500000, real_encryption_ratio=0.7, save_samples=False, samples_file="training_data_samples.csv", num_save_samples=5000):
-        """
-        Tạo dữ liệu huấn luyện nâng cao cho các mô hình S-box và permutation
-        
-        Phương pháp này tạo bộ dữ liệu huấn luyện tốt hơn bằng cách:
-        1. Sử dụng một lượng lớn dữ liệu ngẫu nhiên
-        2. Kết hợp với dữ liệu từ các cặp plaintext/ciphertext thực tế
-        3. Tạo dữ liệu có phân phối gần với dữ liệu thực tế
-        
-        Args:
-            num_samples: Số lượng mẫu cần tạo
-            real_encryption_ratio: Tỷ lệ mẫu lấy từ mã hóa DES thực tế
-            save_samples: Có lưu mẫu để thuyết trình không
-            samples_file: Tên file lưu mẫu dữ liệu
-            num_save_samples: Số lượng mẫu lưu để thuyết trình
-            
-        Returns:
-            Tuple: (X_sbox_all, y_sbox_all, X_perm, y_perm)
-        """
         print(f"Generating {num_samples} enhanced training samples...")
         
         # Dữ liệu cho S-box
@@ -265,7 +243,7 @@ class MLEnhancedDES:
             
             
             # Giả lập việc trích xuất dữ liệu cho S-box từ quá trình mã hóa
-            for i in range(2):  # Giảm từ 8 xuống 2 S-box cho DEMO
+            for i in range(2):  # Giảm từ 8 xuống 2 S-box 
                 for round in range(16):  # 16 rounds của DES
                     # Tạo đầu vào ngẫu nhiên (6-bit) - mô phỏng dữ liệu trung gian
                     input_val = random.randint(0, 63)
@@ -291,7 +269,7 @@ class MLEnhancedDES:
                     # Lưu vào y
                     y_sbox_all[i].append(output_binary)
                     
-                    # Lưu mẫu dữ liệu nếu cần
+                    # Lưu dữ liệu
                     if save_samples and len(samples_to_save) < num_save_samples:
                         # Chuyển đổi sang định dạng dễ đọc
                         input_str = ''.join([str(int(bit)) for bit in input_binary])

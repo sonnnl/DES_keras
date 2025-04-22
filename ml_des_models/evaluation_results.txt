@@ -1,7 +1,7 @@
-Optimization strategy: speed
-Training parameters: samples=20000, epochs=10, lr=0.001, batch_size=128, dropout=0.2
+Phương án huấn luyện: balanced
+Training parameters: samples=100000, epochs=50, lr=0.001, batch_size=128, dropout=0.2
 
 Evaluation results:
-sbox_0: Accuracy=0.4560, Loss=0.5578
-sbox_1: Accuracy=0.3830, Loss=0.5570
-permutation: Accuracy=0.0370, Loss=0.0602
+sbox_0: Accuracy=0.3000, Loss=0.5806
+sbox_1: Accuracy=0.5900, Loss=0.0016
+permutation: Accuracy=0.0880, Loss=0.0107
